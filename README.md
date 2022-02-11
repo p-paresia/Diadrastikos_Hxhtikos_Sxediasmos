@@ -108,6 +108,13 @@ s.reboot;
 s.scope;
 s.meter;
 FreqScope.new;
+
+~n1 = NetAddr.new("127.0.0.1", 12000);
+~n1.port;
+
+///////////////////////// End of Arduino Region/////////////////////////////
+
+
           ////////////<< summary of add SynthDefs >> /////////////
 
 (
@@ -166,12 +173,16 @@ SynthDef.new(\reverb,{
 ///////////////////////////////////// Evaluate The Instruments/////////////////////////////////////////////
 )
 
+
+
 (
 ~stem = Pbind (
 	\instrument, \synthP,
-	\dur,Prand([1,0.5],inf),
-	\freq, Prand([0.2, 0.5],inf),
-	\detune,Pwhite(0,0.1,inf),
+	\dur,Prand([0,1,2],inf),
+	\freq, Prand([80, 40, 60, 90, 120, 100, 150, 200, 250], inf),
+
+	//\myOtherParameter, Prand([0.1, 0.7]),
+	\detune,Pwhite(0.5,0.7,inf),
 	\rqmin,0.005,
 	\rqmax,0.008,
 	\cfmin,Prand((Scale.minor.degrees+64).midicps,inf)*Prand([0.5,1,2,4],inf),
@@ -181,22 +192,24 @@ SynthDef.new(\reverb,{
 	\rel,5,
 	\amp,7,
 	\pan, Pwhite(-0.8, 0.8, inf),
-	\out, ~reverbBus
+	\osc, Pfunc {|e| ~n1.sendMsg('/moveValuesY',(e[\freq] / 2).postln, e[\freq].postln, (e[\freq] / 4).postln, e[\dur].postln)},
+	\out, ~reverbBus,
 ).play;
 
- ~movementY = {rrand(0, 900)}!2;
- ~n1.sendMsg('/moveValuesY', ~movementY[0], ~movementY[1]);
- ~movementY;
+// ~n1.sendMsg('\moveValuesY',e[\detune], e[\freq])
 )
+
 
 ~stem.free;
 ~stem.stop;
+
 
 (
 ~stem2 =  Pbind(
 	\instrument, \synthP,
 	\dur,Pseq([0.2,0.3,0.6,0.7],inf),
-	\freq, Prand([500,2000],inf),
+	\freq, rrand(100,900),
+	// \osc, Pfunc {|e| ~n1.sendMsg('/moveValuesY',e[\dur].postln, e[\freq].postln)},
 	\ctranspose, -12 ,
 	\detune, Pwhite(0.1,0.3,inf),
 	\rqmin,0.05,
@@ -212,8 +225,10 @@ SynthDef.new(\reverb,{
 ).play;
 )
 
+
 ~stem2.free;
 ~stem2.stop;
+
 
 (
 ~inst2 = Pbind(
@@ -234,6 +249,8 @@ SynthDef.new(\reverb,{
 	\out, ~reverbBus
 ).play;
 )
+
+
 
 ~inst2.free;
 ~inst2.stop;
@@ -260,13 +277,12 @@ int green = 0;
 int blue = 0;
 int movementY = 0;
 int movementX = 0;
+int movementZ =0;
+int movementNew = 0;
 
 PImage img;
-
 String imageKadinsky = "venus.jpg";
 
-int back = #f1f1f1;
-int cFill = 0;
 
 void setup() 
 {
@@ -282,35 +298,36 @@ void setup()
 
 void draw() 
 {
-  background(back);
-  fill(cFill);
+  if(movementNew == 0)
+  {
+    red = int(random(movementX, movementZ));
+    green = int(random(movementY, movementX));
+    blue = int(random(movementZ, movementY));
+  }
+  if (movementNew == 1)
+  {
+    red = int(random(movementZ, movementY));
+    green = int(random(movementX, movementZ));
+    blue = int(random(movementY, movementX));
+  }
+  if (movementNew == 2)
+  {
+    red = int(random(movementY, movementX));
+    green = int(random(movementX, movementY));
+    blue = int(random(movementX, movementZ));
+  }
+  
+  background(red,green,blue);
+  fill(blue,red,green);
+  
   noStroke();
   sphereDetail(5);
   float tiles = movementX /2;
   float tileSize = width/tiles;
   push();
   translate(width/2,height/2);
-  rotateY(radians(frameCount * movementY));
-  
+  rotateY(radians(frameCount * movementNew));
  
-  push();
-  if (mousePressed && mouseButton == LEFT)
-  {
-   back = int(random(#2d917f,#442166));
-   cFill = int(random(#043814,#b53f18));
-  }
-  else if (mousePressed && mouseButton == RIGHT)
-  {
-   back = int(random(#5e1d31,#856809));
-   cFill = int(random(#043814,#b53f18));
-  }
-  else 
-  {
-    back = 0; 
-    cFill = 255;
-  }
-  pop();
-  
   for (int x = 0; x < tiles; x++) 
   {
     for (int y = 0; y < tiles; y++) 
@@ -330,9 +347,11 @@ void draw()
 
 void oscEvent(OscMessage theOscMessage)
 { 
-  movementY = theOscMessage.get(0).intValue();
+  float movementY = theOscMessage.get(0).floatValue();
   movementX = theOscMessage.get(1).intValue(); 
-  println(movementY, "", movementX);
+  float movementZ = theOscMessage.get(2).floatValue();
+  movementNew = theOscMessage.get(3).intValue();
+  println(movementY, "", movementX, "", movementZ, "", movementNew);
 }
   ```
   </details>
