@@ -12,13 +12,12 @@ int green = 0;
 int blue = 0;
 int movementY = 0;
 int movementX = 0;
+int movementZ =0;
+int movementNew = 0;
 
 PImage img;
-
 String imageKadinsky = "venus.jpg";
 
-int back = #f1f1f1;
-int cFill = 0;
 
 void setup() 
 {
@@ -34,35 +33,36 @@ void setup()
 
 void draw() 
 {
-  background(back);
-  fill(cFill);
+  if(movementNew == 0)
+  {
+    red = int(random(movementX, movementZ));
+    green = int(random(movementY, movementX));
+    blue = int(random(movementZ, movementY));
+  }
+  if (movementNew == 1)
+  {
+    red = int(random(movementZ, movementY));
+    green = int(random(movementX, movementZ));
+    blue = int(random(movementY, movementX));
+  }
+  if (movementNew == 2)
+  {
+    red = int(random(movementY, movementX));
+    green = int(random(movementX, movementY));
+    blue = int(random(movementX, movementZ));
+  }
+  
+  background(red,green,blue);
+  fill(blue,red,green);
+  
   noStroke();
   sphereDetail(5);
   float tiles = movementX /2;
   float tileSize = width/tiles;
   push();
   translate(width/2,height/2);
-  rotateY(radians(frameCount * movementY));
-  
+  rotateY(radians(frameCount * movementNew));
  
-  push();
-  if (mousePressed && mouseButton == LEFT)
-  {
-   back = int(random(#2d917f,#442166));
-   cFill = int(random(#043814,#b53f18));
-  }
-  else if (mousePressed && mouseButton == RIGHT)
-  {
-   back = int(random(#5e1d31,#856809));
-   cFill = int(random(#043814,#b53f18));
-  }
-  else 
-  {
-    back = 0; 
-    cFill = 255;
-  }
-  pop();
-  
   for (int x = 0; x < tiles; x++) 
   {
     for (int y = 0; y < tiles; y++) 
@@ -82,7 +82,9 @@ void draw()
 
 void oscEvent(OscMessage theOscMessage)
 { 
-  movementY = theOscMessage.get(0).intValue();
+  float movementY = theOscMessage.get(0).floatValue();
   movementX = theOscMessage.get(1).intValue(); 
-  println(movementY, "", movementX);
+  float movementZ = theOscMessage.get(2).floatValue();
+  movementNew = theOscMessage.get(3).intValue();
+  println(movementY, "", movementX, "", movementZ, "", movementNew);
 }
