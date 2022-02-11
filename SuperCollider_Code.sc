@@ -1,6 +1,3 @@
-//sophie.emmion@hotmail.gr
-
-
 s.boot;
 s.reboot;
 s.scope;
@@ -9,41 +6,6 @@ FreqScope.new;
 
 ~n1 = NetAddr.new("127.0.0.1", 12000);
 ~n1.port;
-
-
-/////////////////////////////////////////////////////////////////////////////////
-
-
-
-/////////////////////////Deposit Arduino Values in Array ////////////////////////
-
-/*(
-~charArray = [];
-~getValues = Routine.new({
-	var ascii;
-	{
-		ascii = ~port.read.asAscii;
-		if(ascii.isDecDigit, {~charArray = ~charArray.add(ascii)});
-		if(ascii == $a, {
-			~val = ~charArray.collect(_.digit).convertDigits;
-			~charArray = [];
-		});
-	}.loop;
-}).play;
-)*/
-
-/*(
-~control = Routine.new({
-	{
-		~stem2.set(\freq, ~val.linexp(0, 1023, 80, 4000));
-		0.01.wait;
-	}.loop;
-}).play;
-)*/
-
-
-/*~control.free;
-~control.stop;*/
 
 ///////////////////////// End of Arduino Region/////////////////////////////
 
@@ -106,12 +68,16 @@ SynthDef.new(\reverb,{
 ///////////////////////////////////// Evaluate The Instruments/////////////////////////////////////////////
 )
 
+
+
 (
 ~stem = Pbind (
 	\instrument, \synthP,
-	\dur,Prand([1,0.5],inf),
-	\freq, Prand([0.2, 0.5],inf),
-	\detune,Pwhite(0,0.1,inf),
+	\dur,Prand([0,1,2],inf),
+	\freq, Prand([80, 40, 60, 90, 120, 100, 150, 200, 250], inf),
+
+	//\myOtherParameter, Prand([0.1, 0.7]),
+	\detune,Pwhite(0.5,0.7,inf),
 	\rqmin,0.005,
 	\rqmax,0.008,
 	\cfmin,Prand((Scale.minor.degrees+64).midicps,inf)*Prand([0.5,1,2,4],inf),
@@ -121,22 +87,24 @@ SynthDef.new(\reverb,{
 	\rel,5,
 	\amp,7,
 	\pan, Pwhite(-0.8, 0.8, inf),
-	\out, ~reverbBus
+	\osc, Pfunc {|e| ~n1.sendMsg('/moveValuesY',(e[\freq] / 2).postln, e[\freq].postln, (e[\freq] / 4).postln, e[\dur].postln)},
+	\out, ~reverbBus,
 ).play;
 
- ~movementY = {rrand(0, 900)}!2;
- ~n1.sendMsg('/moveValuesY', ~movementY[0], ~movementY[1]);
- ~movementY;
+// ~n1.sendMsg('\moveValuesY',e[\detune], e[\freq])
 )
+
 
 ~stem.free;
 ~stem.stop;
+
 
 (
 ~stem2 =  Pbind(
 	\instrument, \synthP,
 	\dur,Pseq([0.2,0.3,0.6,0.7],inf),
-	\freq, Prand([500,2000],inf),
+	\freq, rrand(100,900),
+	// \osc, Pfunc {|e| ~n1.sendMsg('/moveValuesY',e[\dur].postln, e[\freq].postln)},
 	\ctranspose, -12 ,
 	\detune, Pwhite(0.1,0.3,inf),
 	\rqmin,0.05,
@@ -152,8 +120,10 @@ SynthDef.new(\reverb,{
 ).play;
 )
 
+
 ~stem2.free;
 ~stem2.stop;
+
 
 (
 ~inst2 = Pbind(
@@ -174,6 +144,8 @@ SynthDef.new(\reverb,{
 	\out, ~reverbBus
 ).play;
 )
+
+
 
 ~inst2.free;
 ~inst2.stop;
